@@ -1,0 +1,4 @@
+# Les exports SVG de Figma embarquent le raster (un seul fichier ~87 Mo) : trop
+# lourds pour git. Conservés en local uniquement — les rendus PNG de img/ servent
+# de référence visuelle légère pour les maquettes.
+svg/
