@@ -1,0 +1,9 @@
+node_modules
+.env
+
+# Uploaded images are runtime artifacts, not source. Keep the folder tracked via .gitkeep.
+images/*
+!images/.gitkeep
+
+.DS_Store
+*.log
