@@ -167,3 +167,35 @@ exports.deleteBook = (req, res, next) => {
     })
     .catch((error) => res.status(400).json({ error }));
 };
+
+exports.createRating = (req, res, next) => {
+  // The rater is always the authenticated user, never a client-supplied id.
+  const userId = req.auth.userId;
+  const { rating } = req.body;
+
+  // Ratings are whole stars from 0 to 5; reject anything outside that range.
+  if (!Number.isInteger(rating) || rating < 0 || rating > 5) {
+    return res.status(400).json({ message: 'La note doit être un entier entre 0 et 5.' });
+  }
+
+  return Book.findOne({ _id: req.params.id })
+    .then((book) => {
+      if (!book) {
+        return res.status(404).json({ message: 'Livre non trouvé !' });
+      }
+      // Enforce one rating per user to keep the average honest.
+      if (book.ratings.some((r) => r.userId === userId)) {
+        return res.status(400).json({ message: 'Vous avez déjà noté ce livre.' });
+      }
+
+      book.ratings.push({ userId, grade: rating });
+      book.averageRating = computeAverage(book.ratings);
+
+      return book
+        .save()
+        // Return the full updated document so the frontend can map _id -> id.
+        .then((updatedBook) => res.status(200).json(updatedBook))
+        .catch((error) => res.status(400).json({ error }));
+    })
+    .catch((error) => res.status(400).json({ error }));
+};
