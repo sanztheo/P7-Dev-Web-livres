@@ -2,10 +2,12 @@ const multer = require('multer');
 const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
-// Destination for optimized images. Created at startup so sharp.toFile never
-// fails on a missing directory; recursive makes the call idempotent.
-const IMAGES_DIR = 'images';
+// Destination for optimized images, anchored on this file's location so it resolves
+// to the same folder regardless of the process cwd (app.js serves __dirname/images
+// too). Created at startup so sharp.toFile never fails on a missing directory.
+const IMAGES_DIR = path.join(__dirname, '..', 'images');
 fs.mkdirSync(IMAGES_DIR, { recursive: true });
 
 // Green-code target: book covers display at ~463px wide on the frontend, so
@@ -13,18 +15,25 @@ fs.mkdirSync(IMAGES_DIR, { recursive: true });
 const TARGET_WIDTH = 463;
 const WEBP_QUALITY = 80;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 // memoryStorage keeps the upload in a Buffer so sharp can transform it before
 // anything touches disk — we never persist the raw, unoptimized original.
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE_BYTES },
+  // Reject non-image uploads up front (declared MIME type) before buffering 5MB;
+  // sharp remains the authoritative content check downstream.
+  fileFilter: (req, file, cb) => {
+    cb(null, ALLOWED_MIME_TYPES.includes(file.mimetype));
+  },
 }).single('image');
 
-// Strips the original extension and spaces so the generated filename is safe to
-// use in a URL path; the .webp extension is enforced after conversion below.
+// Keep only the base name (path.parse drops any directory) and replace every
+// character that isn't URL/filesystem-safe — spaces, separators, NUL bytes — so
+// the generated name can neither traverse out of images/ nor truncate on a NUL.
 const sanitizeName = (originalname) =>
-  path.parse(originalname).name.split(' ').join('_');
+  path.parse(originalname).name.replace(/[^a-zA-Z0-9._-]/g, '_');
 
 const optimizeImage = async (req, res, next) => {
   // Image is optional (e.g. modifyBook without a new file), so skip silently.
@@ -33,9 +42,12 @@ const optimizeImage = async (req, res, next) => {
   }
 
   try {
-    // Date.now() suffix keeps filenames unique even when two users upload the
-    // same originalname, preventing one cover from overwriting another.
-    const filename = `${sanitizeName(req.file.originalname)}_${Date.now()}.webp`;
+    // Timestamp + random bytes keep filenames unique even if two users upload the
+    // same originalname within the same millisecond, preventing one cover from
+    // overwriting another.
+    const filename = `${sanitizeName(req.file.originalname)}_${Date.now()}_${crypto
+      .randomBytes(4)
+      .toString('hex')}.webp`;
 
     await sharp(req.file.buffer)
       .resize({ width: TARGET_WIDTH, withoutEnlargement: true })
@@ -51,4 +63,4 @@ const optimizeImage = async (req, res, next) => {
   }
 };
 
-module.exports = { upload, optimizeImage };
+module.exports = { upload, optimizeImage, IMAGES_DIR };
