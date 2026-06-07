@@ -78,9 +78,11 @@ app.use((err, req, res, next) => {
   const message =
     err.name === 'MulterError'
       ? 'Fichier invalide ou trop volumineux.'
-      : status >= 500
-        ? 'Erreur serveur.'
-        : 'Requête invalide.';
+      : status === 413
+        ? 'Charge trop volumineuse.'
+        : status >= 500
+          ? 'Erreur serveur.'
+          : 'Requête invalide.';
 
   return res.status(status).json({ message });
 });
