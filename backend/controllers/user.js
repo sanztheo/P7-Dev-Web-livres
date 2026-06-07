@@ -13,31 +13,47 @@ const TOKEN_EXPIRATION = '24h';
 // whether the email exists (prevents user enumeration).
 const INVALID_CREDENTIALS_MESSAGE = 'Paire identifiant/mot de passe incorrecte.';
 
-exports.signup = async (req, res) => {
+// Pre-computed hash compared against when the email is unknown, so a failed login
+// costs about the same time whether or not the account exists (defeats the timing
+// side-channel that would otherwise let an attacker enumerate emails).
+const DUMMY_HASH = bcrypt.hashSync('constant_time_dummy_password', BCRYPT_SALT_ROUNDS);
+
+exports.signup = async (req, res, next) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email et mot de passe requis.' });
+  }
+
   try {
     // Never persist the plaintext password; only the bcrypt hash is stored.
-    const hashedPassword = await bcrypt.hash(req.body.password, BCRYPT_SALT_ROUNDS);
-    const user = new User({
-      email: req.body.email,
-      password: hashedPassword,
-    });
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+    const user = new User({ email, password: hashedPassword });
     await user.save();
     return res.status(201).json({ message: 'Utilisateur créé !' });
   } catch (error) {
-    // Includes mongoose-unique-validator failures (duplicate email).
-    return res.status(400).json({ error });
+    // Forward to the central handler for a generic message: never echo the raw
+    // Mongoose error — it would leak the submitted email and reveal that an account
+    // already exists (an account-enumeration vector).
+    return next(error);
   }
 };
 
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email et mot de passe requis.' });
+  }
+
   try {
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne({ email });
     if (!user) {
-      // Same response as a wrong password to avoid leaking which emails exist.
+      // Run a bcrypt compare against a dummy hash anyway so this branch costs about
+      // the same as a real check — hides whether the email exists.
+      await bcrypt.compare(password, DUMMY_HASH);
       return res.status(401).json({ message: INVALID_CREDENTIALS_MESSAGE });
     }
 
-    const isPasswordValid = await bcrypt.compare(req.body.password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: INVALID_CREDENTIALS_MESSAGE });
     }
@@ -51,6 +67,6 @@ exports.login = async (req, res) => {
       token,
     });
   } catch (error) {
-    return res.status(500).json({ error });
+    return next(error);
   }
 };
