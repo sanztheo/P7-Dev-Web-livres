@@ -1,5 +1,7 @@
 const fs = require('fs');
+const path = require('path');
 const Book = require('../models/Book');
+const { IMAGES_DIR } = require('../middleware/multer-config');
 
 // Mongoose rejects schema validation if averageRating carries more precision than
 // the frontend renders, so we normalise every computed average to two decimals.
@@ -24,7 +26,7 @@ const filenameFromImageUrl = (imageUrl) => imageUrl.split('/images/')[1];
 // just-written file or it leaks on disk with no document referencing it.
 const cleanupUploadedFile = (req) => {
   if (req.file) {
-    fs.unlink(`images/${req.file.filename}`, () => {});
+    fs.unlink(path.join(IMAGES_DIR, req.file.filename), () => {});
   }
 };
 
@@ -67,14 +69,14 @@ exports.createBook = (req, res, next) => {
     .then(() => res.status(201).json({ message: 'Livre enregistré !' }))
     .catch((error) => {
       cleanupUploadedFile(req);
-      return res.status(400).json({ error });
+      return next(error);
     });
 };
 
 exports.getAllBooks = (req, res, next) => {
   Book.find()
     .then((books) => res.status(200).json(books))
-    .catch((error) => res.status(400).json({ error }));
+    .catch(next);
 };
 
 exports.getOneBook = (req, res, next) => {
@@ -85,7 +87,7 @@ exports.getOneBook = (req, res, next) => {
       }
       return res.status(200).json(book);
     })
-    .catch((error) => res.status(400).json({ error }));
+    .catch(next);
 };
 
 exports.getBestRating = (req, res, next) => {
@@ -94,18 +96,28 @@ exports.getBestRating = (req, res, next) => {
     .sort({ averageRating: -1 })
     .limit(3)
     .then((books) => res.status(200).json(books))
-    .catch((error) => res.status(400).json({ error }));
+    .catch(next);
 };
 
 exports.modifyBook = (req, res, next) => {
   // A multipart request carries a fresh image (book is a JSON string + a file),
   // otherwise the payload is a plain JSON body with no new image.
-  const bookObject = req.file
-    ? {
+  let bookObject;
+  if (req.file) {
+    try {
+      bookObject = {
         ...JSON.parse(req.body.book),
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
-      }
-    : { ...req.body };
+      };
+    } catch (error) {
+      // A malformed book JSON would otherwise throw synchronously and leak a stack
+      // trace; reject as 400 and drop the just-uploaded file.
+      cleanupUploadedFile(req);
+      return res.status(400).json({ message: 'Données du livre invalides.' });
+    }
+  } else {
+    bookObject = { ...req.body };
+  }
 
   // Never trust a client-supplied owner: keep the original userId untouched.
   delete bookObject.userId;
@@ -127,7 +139,7 @@ exports.modifyBook = (req, res, next) => {
       // A replacement image leaves the old file orphaned on disk: delete it.
       if (req.file) {
         const oldFilename = filenameFromImageUrl(book.imageUrl);
-        fs.unlink(`images/${oldFilename}`, () => {});
+        fs.unlink(path.join(IMAGES_DIR, oldFilename), () => {});
       }
 
       return Book.updateOne(
@@ -137,12 +149,12 @@ exports.modifyBook = (req, res, next) => {
         .then(() => res.status(200).json({ message: 'Livre modifié !' }))
         .catch((error) => {
           cleanupUploadedFile(req);
-          return res.status(400).json({ error });
+          return next(error);
         });
     })
     .catch((error) => {
       cleanupUploadedFile(req);
-      return res.status(400).json({ error });
+      return next(error);
     });
 };
 
@@ -159,13 +171,13 @@ exports.deleteBook = (req, res, next) => {
 
       // Remove the backing image first so deleting the document doesn't orphan it.
       const filename = filenameFromImageUrl(book.imageUrl);
-      fs.unlink(`images/${filename}`, () => {
+      fs.unlink(path.join(IMAGES_DIR, filename), () => {
         Book.deleteOne({ _id: req.params.id })
           .then(() => res.status(200).json({ message: 'Livre supprimé !' }))
-          .catch((error) => res.status(400).json({ error }));
+          .catch(next);
       });
     })
-    .catch((error) => res.status(400).json({ error }));
+    .catch(next);
 };
 
 exports.createRating = (req, res, next) => {
@@ -195,7 +207,7 @@ exports.createRating = (req, res, next) => {
         .save()
         // Return the full updated document so the frontend can map _id -> id.
         .then((updatedBook) => res.status(200).json(updatedBook))
-        .catch((error) => res.status(400).json({ error }));
+        .catch(next);
     })
-    .catch((error) => res.status(400).json({ error }));
+    .catch(next);
 };
