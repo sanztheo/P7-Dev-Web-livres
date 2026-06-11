@@ -13,7 +13,6 @@ const bookSchema = mongoose.Schema({
       grade: { type: Number, required: true },
     },
   ],
-  // Defaults to 0 so a freshly created book without ratings still exposes a numeric average to the frontend.
   averageRating: { type: Number, default: 0 },
 });
 

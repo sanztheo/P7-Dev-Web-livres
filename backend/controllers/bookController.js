@@ -15,7 +15,7 @@ const computeAverage = (ratings) => {
 
 const filenameFromImageUrl = (imageUrl) => imageUrl.split('/images/')[1];
 
-// sharp écrit le fichier avant qu'on touche à la BDD — on nettoie si ça plante
+// sharp écrit le fichier avant qu'on touche à la BDD - on nettoie si ça plante
 const cleanupUploadedFile = (req) => {
   if (req.file) {
     fs.unlink(path.join(IMAGES_DIR, req.file.filename), () => {});

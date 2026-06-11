@@ -1,11 +1,9 @@
 const http = require('http');
 const app = require('./app');
 
-// Coerce the env value into a valid port; fall back to 4000 (frontend contract).
 const normalizePort = (val) => {
   const port = parseInt(val, 10);
   if (Number.isNaN(port)) {
-    // Named pipe.
     return val;
   }
   if (port >= 0) {
@@ -22,14 +20,14 @@ const errorHandler = (error) => {
     throw error;
   }
   const address = server.address();
-  const bind = typeof address === 'string' ? `pipe ${address}` : `port: ${port}`;
+  const bind = typeof address === 'string' ? `pipe ${address}` : `port ${port}`;
   switch (error.code) {
     case 'EACCES':
-      console.error(`${bind} requires elevated privileges.`);
+      console.error(`${bind} : droits insuffisants.`);
       process.exit(1);
       break;
     case 'EADDRINUSE':
-      console.error(`${bind} is already in use.`);
+      console.error(`${bind} déjà utilisé.`);
       process.exit(1);
       break;
     default:
@@ -43,7 +41,7 @@ server.on('error', errorHandler);
 server.on('listening', () => {
   const address = server.address();
   const bind = typeof address === 'string' ? `pipe ${address}` : `port ${port}`;
-  console.log(`Listening on ${bind}`);
+  console.log(`Serveur sur ${bind}`);
 });
 
 server.listen(port);

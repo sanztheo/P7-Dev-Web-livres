@@ -6,8 +6,6 @@ const userSchema = mongoose.Schema({
   password: { type: String, required: true },
 });
 
-// Enforce email uniqueness at the schema level with friendly validation errors
-// instead of relying solely on Mongoose's raw duplicate-key (E11000) errors.
 userSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('User', userSchema);
