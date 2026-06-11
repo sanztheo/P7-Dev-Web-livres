@@ -2,10 +2,8 @@ const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
 
-const userCtrl = require('../controllers/user');
+const userController = require('../controllers/userController');
 
-// Throttle auth endpoints: blunts password brute-force and limits how often the
-// deliberately slow bcrypt comparison can be triggered (a CPU DoS lever).
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -14,7 +12,7 @@ const authLimiter = rateLimit({
   message: { message: 'Trop de tentatives, réessayez plus tard.' },
 });
 
-router.post('/signup', authLimiter, userCtrl.signup);
-router.post('/login', authLimiter, userCtrl.login);
+router.post('/signup', authLimiter, userController.signup);
+router.post('/login', authLimiter, userController.login);
 
 module.exports = router;
