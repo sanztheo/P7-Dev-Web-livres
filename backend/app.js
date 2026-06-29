@@ -5,12 +5,12 @@ if (!process.env.JWT_SECRET) {
 }
 
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
 const helmet = require('helmet');
 
 const connectDatabase = require('./config/database');
 const allowCrossOrigin = require('./middleware/cors');
+const errorHandler = require('./middleware/errorHandler');
+const { IMAGES_DIR } = require('./middleware/uploadImage');
 const userRoutes = require('./routes/userRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 
@@ -22,9 +22,6 @@ app.use(
   }),
 );
 
-const IMAGES_DIR = path.join(__dirname, 'images');
-fs.mkdirSync(IMAGES_DIR, { recursive: true });
-
 connectDatabase();
 
 app.use(express.json({ limit: '10kb' }));
@@ -35,32 +32,6 @@ app.use('/api/auth', userRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/images', express.static(IMAGES_DIR));
 
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-  if (res.headersSent) {
-    return next(err);
-  }
-  console.error(err);
-
-  const clientErrorNames = ['ValidationError', 'CastError', 'MulterError'];
-  let status = err.status || err.statusCode;
-  if (!status) {
-    status =
-      clientErrorNames.includes(err.name) || err.type === 'entity.parse.failed'
-        ? 400
-        : 500;
-  }
-
-  const message =
-    err.name === 'MulterError'
-      ? 'Fichier invalide ou trop volumineux.'
-      : status === 413
-        ? 'Charge trop volumineuse.'
-        : status >= 500
-          ? 'Erreur serveur.'
-          : 'Requête invalide.';
-
-  return res.status(status).json({ message });
-});
+app.use(errorHandler);
 
 module.exports = app;
