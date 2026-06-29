@@ -12,7 +12,7 @@ const DUMMY_HASH = bcrypt.hashSync('constant_time_dummy_password', BCRYPT_SALT_R
 exports.signup = async (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ message: 'Email et mot de passe requis.' });
+    return res.status(400).json({ message: 'Email et mot de passe incorrect / requis.' });
   }
 
   try {
@@ -28,7 +28,7 @@ exports.signup = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ message: 'Email et mot de passe requis.' });
+    return res.status(400).json({ message: 'Email et mot de passe incorrect / requis.' });
   }
 
   try {
