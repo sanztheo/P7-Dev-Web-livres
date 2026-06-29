@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
 
 const userSchema = mongoose.Schema({
-  email: { type: String, required: true, unique: true },
+  // lowercase + trim : on stocke toujours l'email normalisé pour garantir
+  // l'unicité même si l'API est appelée sans passer par la validation.
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
 });
 

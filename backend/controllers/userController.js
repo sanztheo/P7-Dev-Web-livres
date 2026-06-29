@@ -10,10 +10,8 @@ const INVALID_CREDENTIALS_MESSAGE = 'Paire identifiant/mot de passe incorrecte.'
 const DUMMY_HASH = bcrypt.hashSync('constant_time_dummy_password', BCRYPT_SALT_ROUNDS);
 
 exports.signup = async (req, res, next) => {
+  // email et password sont déjà validés par le middleware validateSignup.
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email et mot de passe incorrect / requis.' });
-  }
 
   try {
     const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
@@ -26,10 +24,8 @@ exports.signup = async (req, res, next) => {
 };
 
 exports.login = async (req, res, next) => {
+  // email et password sont déjà validés par le middleware validateLogin.
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email et mot de passe incorrect / requis.' });
-  }
 
   try {
     const user = await User.findOne({ email });
