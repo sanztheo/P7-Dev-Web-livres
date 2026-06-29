@@ -1,26 +1,10 @@
-const fs = require('fs');
-const path = require('path');
 const Book = require('../models/Book');
-const { IMAGES_DIR } = require('../middleware/uploadImage');
-
-const round2 = (value) => Math.round(value * 100) / 100;
-
-const computeAverage = (ratings) => {
-  if (ratings.length === 0) {
-    return 0;
-  }
-  const total = ratings.reduce((sum, { grade }) => sum + grade, 0);
-  return round2(total / ratings.length);
-};
-
-const filenameFromImageUrl = (imageUrl) => imageUrl.split('/images/')[1];
-
-// sharp écrit le fichier avant qu'on touche à la BDD - on nettoie si ça plante
-const cleanupUploadedFile = (req) => {
-  if (req.file) {
-    fs.unlink(path.join(IMAGES_DIR, req.file.filename), () => {});
-  }
-};
+const { computeAverage } = require('../utils/averageRating');
+const {
+  filenameFromImageUrl,
+  deleteImageFile,
+  cleanupUploadedFile,
+} = require('../utils/bookImage');
 
 exports.createBook = (req, res, next) => {
   if (!req.file) {
@@ -116,8 +100,7 @@ exports.modifyBook = (req, res, next) => {
       }
 
       if (req.file) {
-        const oldFilename = filenameFromImageUrl(book.imageUrl);
-        fs.unlink(path.join(IMAGES_DIR, oldFilename), () => {});
+        deleteImageFile(filenameFromImageUrl(book.imageUrl));
       }
 
       return Book.updateOne(
@@ -146,8 +129,7 @@ exports.deleteBook = (req, res, next) => {
         return res.status(403).json({ message: '403: unauthorized request' });
       }
 
-      const filename = filenameFromImageUrl(book.imageUrl);
-      fs.unlink(path.join(IMAGES_DIR, filename), () => {
+      deleteImageFile(filenameFromImageUrl(book.imageUrl), () => {
         Book.deleteOne({ _id: req.params.id })
           .then(() => res.status(200).json({ message: 'Livre supprimé !' }))
           .catch(next);
