@@ -137,31 +137,3 @@ exports.deleteBook = (req, res, next) => {
     })
     .catch(next);
 };
-
-exports.createRating = (req, res, next) => {
-  const userId = req.auth.userId;
-  const { rating } = req.body;
-
-  if (!Number.isInteger(rating) || rating < 0 || rating > 5) {
-    return res.status(400).json({ message: 'La note doit être un entier entre 0 et 5.' });
-  }
-
-  return Book.findOne({ _id: req.params.id })
-    .then((book) => {
-      if (!book) {
-        return res.status(404).json({ message: 'Livre non trouvé !' });
-      }
-      if (book.ratings.some((r) => r.userId === userId)) {
-        return res.status(400).json({ message: 'Vous avez déjà noté ce livre.' });
-      }
-
-      book.ratings.push({ userId, grade: rating });
-      book.averageRating = computeAverage(book.ratings);
-
-      return book
-        .save()
-        .then((updatedBook) => res.status(200).json(updatedBook))
-        .catch(next);
-    })
-    .catch(next);
-};
