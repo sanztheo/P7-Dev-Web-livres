@@ -10,6 +10,7 @@ const fs = require('fs');
 const helmet = require('helmet');
 
 const connectDatabase = require('./config/database');
+const allowCrossOrigin = require('./middleware/cors');
 const userRoutes = require('./routes/userRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 
@@ -28,21 +29,7 @@ connectDatabase();
 
 app.use(express.json({ limit: '10kb' }));
 
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization',
-  );
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-  );
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  return next();
-});
+app.use(allowCrossOrigin);
 
 app.use('/api/auth', userRoutes);
 app.use('/api/books', bookRoutes);
