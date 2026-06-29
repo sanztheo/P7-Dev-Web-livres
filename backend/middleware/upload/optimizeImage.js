@@ -1,28 +1,19 @@
-const multer = require('multer');
 const sharp = require('sharp');
-const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-
-const IMAGES_DIR = path.join(__dirname, '..', 'images');
-fs.mkdirSync(IMAGES_DIR, { recursive: true });
+const { IMAGES_DIR } = require('../../config/paths');
 
 const TARGET_WIDTH = 463;
 const WEBP_QUALITY = 80;
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_FILE_SIZE_BYTES },
-  fileFilter: (req, file, cb) => {
-    cb(null, ALLOWED_MIME_TYPES.includes(file.mimetype));
-  },
-}).single('image');
-
+// Nettoie le nom d'origine pour ne garder que des caractères sûrs dans le
+// nom de fichier final.
 const sanitizeName = (originalname) =>
   path.parse(originalname).name.replace(/[^a-zA-Z0-9._-]/g, '_');
 
+// "Green code" : on redimensionne l'image et on la convertit en WebP (plus
+// léger) avant de l'écrire sur le disque sous un nom unique. S'il n'y a pas de
+// fichier (ex. modification sans nouvelle image), on passe simplement la main.
 const optimizeImage = async (req, res, next) => {
   if (!req.file) {
     return next();
@@ -45,4 +36,4 @@ const optimizeImage = async (req, res, next) => {
   }
 };
 
-module.exports = { upload, optimizeImage, IMAGES_DIR };
+module.exports = optimizeImage;

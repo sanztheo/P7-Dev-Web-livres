@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const authenticate = require('../middleware/authenticate');
-const { upload, optimizeImage } = require('../middleware/uploadImage');
+const upload = require('../middleware/upload/multerConfig');
+const optimizeImage = require('../middleware/upload/optimizeImage');
 const bookController = require('../controllers/bookController');
 const ratingController = require('../controllers/ratingController');
 

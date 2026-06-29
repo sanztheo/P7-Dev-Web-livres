@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { IMAGES_DIR } = require('../middleware/uploadImage');
+const { IMAGES_DIR } = require('../config/paths');
 
 // Retrouve le nom du fichier à partir de l'URL d'image stockée en base.
 const filenameFromImageUrl = (imageUrl) => imageUrl.split('/images/')[1];
