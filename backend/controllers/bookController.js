@@ -160,7 +160,7 @@ exports.createRating = (req, res, next) => {
   const userId = req.auth.userId;
   const { rating } = req.body;
 
-  if (!Number.isInteger(rating) || rating < 0 || rating >= 5) {
+  if (!Number.isInteger(rating) || rating < 0 || rating > 5) {
     return res.status(400).json({ message: 'La note doit être un entier entre 0 et 5.' });
   }
 
