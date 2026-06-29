@@ -5,12 +5,11 @@ if (!process.env.JWT_SECRET) {
 }
 
 const express = require('express');
-const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
 const helmet = require('helmet');
 
-
+const connectDatabase = require('./config/database');
 const userRoutes = require('./routes/userRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 
@@ -25,10 +24,7 @@ app.use(
 const IMAGES_DIR = path.join(__dirname, 'images');
 fs.mkdirSync(IMAGES_DIR, { recursive: true });
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connexion MongoDB OK'))
-  .catch((error) => console.error('Connexion MongoDB échouée :', error));
+connectDatabase();
 
 app.use(express.json({ limit: '10kb' }));
 
