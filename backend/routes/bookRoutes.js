@@ -10,7 +10,7 @@ const getOneBook = require('../controllers/books/getOneBook');
 const getBestRating = require('../controllers/books/getBestRating');
 const modifyBook = require('../controllers/books/modifyBook');
 const deleteBook = require('../controllers/books/deleteBook');
-const ratingController = require('../controllers/ratingController');
+const createRating = require('../controllers/ratings/createRating');
 
 router.get('/', getAllBooks);
 
@@ -22,6 +22,6 @@ router.get('/:id', getOneBook);
 router.post('/', authenticate, upload, optimizeImage, createBook);
 router.put('/:id', authenticate, upload, optimizeImage, modifyBook);
 router.delete('/:id', authenticate, deleteBook);
-router.post('/:id/rating', authenticate, ratingController.createRating);
+router.post('/:id/rating', authenticate, createRating);
 
 module.exports = router;

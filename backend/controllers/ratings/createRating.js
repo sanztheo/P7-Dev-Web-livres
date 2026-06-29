@@ -1,11 +1,11 @@
-const Book = require('../models/Book');
-const { computeAverage } = require('../utils/averageRating');
+const Book = require('../../models/Book');
+const { computeAverage } = require('../../utils/averageRating');
 
 const MIN_GRADE = 0;
 const MAX_GRADE = 5;
 
 // Ajoute la note d'un utilisateur à un livre, puis recalcule sa moyenne.
-exports.createRating = (req, res, next) => {
+module.exports = (req, res, next) => {
   const userId = req.auth.userId;
   const { rating } = req.body;
 
