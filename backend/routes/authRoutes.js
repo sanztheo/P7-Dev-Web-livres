@@ -5,7 +5,7 @@ const { authLimiter } = require('../middleware/rateLimiter');
 const {
   validateSignup,
   validateLogin,
-} = require('../middleware/validation/userValidation');
+} = require('../validation/userValidation');
 const signup = require('../controllers/auth/signup');
 const login = require('../controllers/auth/login');
 
