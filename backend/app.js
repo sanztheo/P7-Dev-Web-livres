@@ -8,11 +8,19 @@ const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
+const helmet = require('helmet');
+
 
 const userRoutes = require('./routes/userRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 
 const app = express();
+
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  }),
+);
 
 const IMAGES_DIR = path.join(__dirname, 'images');
 fs.mkdirSync(IMAGES_DIR, { recursive: true });
