@@ -4,7 +4,7 @@ const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 const MAX_AUTH_ATTEMPTS = 20;
 
 // Limite les tentatives sur les routes d'authentification pour freiner les
-// attaques par force brute (essais de mots de passe en masse).
+// attaques par force brute
 const authLimiter = rateLimit({
   windowMs: FIFTEEN_MINUTES_MS,
   max: MAX_AUTH_ATTEMPTS,
