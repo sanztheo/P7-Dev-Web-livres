@@ -11,6 +11,7 @@ module.exports = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
     const user = new User({ email, password: hashedPassword });
     await user.save();
+    // si l'email existe déjà, ça plante ici (index unique) et part dans le catch
     return res.status(201).json({ message: 'Utilisateur créé !' });
   } catch (error) {
     return next(error);

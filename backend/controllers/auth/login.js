@@ -7,8 +7,7 @@ const {
   INVALID_CREDENTIALS_MESSAGE,
 } = require('./constants');
 
-// Hash "leurre" comparé quand l'email n'existe pas : on garde un temps de
-// réponse constant pour ne pas trahir l'existence d'un compte (timing attack).
+// faux hash qu'on compare quand l'email existe pas, pour pas trahir son existence via le temps de réponse
 const DUMMY_HASH = bcrypt.hashSync('constant_time_dummy_password', BCRYPT_SALT_ROUNDS);
 
 // email et password sont déjà validés par le middleware validateLogin.
@@ -17,16 +16,20 @@ module.exports = async (req, res, next) => {
 
   try {
     const user = await User.findOne({ email });
+    // on cherche le compte par email
     if (!user) {
+      // email inconnu, mais on compare quand même avec le faux hash pour garder le même délai
       await bcrypt.compare(password, DUMMY_HASH);
       return res.status(401).json({ message: INVALID_CREDENTIALS_MESSAGE });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    // bcrypt retrouve le sel planqué dans user.password et compare les deux hash
     if (!isPasswordValid) {
       return res.status(401).json({ message: INVALID_CREDENTIALS_MESSAGE });
     }
 
+    // mot de passe bon, on fabrique le token signé avec la clé secrète, valable 24h
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: TOKEN_EXPIRATION,
     });
